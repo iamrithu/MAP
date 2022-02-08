@@ -35,6 +35,39 @@
   <body>
     <div id="viewDiv">
       <div id="measurements" class="esri-widget"></div>
+      <div id="export" class="esri-widget--button" title="Export">
+        <i class="fas fa-share-square"></i>
+      </div>
+      <div class="container" id="container">
+        <div class="input-box-wrapper">
+          <div class="box">
+            <input type="checkbox" value="" class="selectAll" id="selectAll" />
+            <label for="selectAll">select-All</label>
+          </div>
+
+          <div class="box">
+            <input
+              type="checkbox"
+              value="javascript"
+              class="checkbox"
+              id="javaScript"
+            />
+            <label for="javaScript">javascript</label>
+          </div>
+          <div class="box">
+            <input
+              type="checkbox"
+              value="python"
+              class="checkbox"
+              id="python"
+            />
+            <label for="javaScript">python</label>
+          </div>
+        </div>
+        <div class="print-values">
+          <p id="valueList"></p>
+        </div>
+      </div>
     </div>
     <calcite-panel heading="SketchViewModel Styler" id="propPanel">
       <calcite-block id="headingBlock">

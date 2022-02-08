@@ -1,3 +1,5 @@
+var layerCollection = [];
+
 require([
   "esri/config",
   "esri/widgets/Sketch/SketchViewModel",
@@ -14,6 +16,7 @@ require([
   "esri/widgets/ScaleBar",
   "esri/Graphic",
   "esri/geometry/geometryEngine",
+  "esri/geometry/support/webMercatorUtils",
 ], (
   esriConfig,
   SketchViewModel,
@@ -29,7 +32,8 @@ require([
   locator,
   ScaleBar,
   Graphic,
-  geometryEngine
+  geometryEngine,
+  webMercatorUtils
 ) => {
   esriConfig.apiKey =
     "AAPK98c50a3510cc4cb9a07dc3116113843cqZssDSqHkgmBfOp_v5GIAETd4ggp7oleJJQPSyr9NmmTf-2GSs7swp9zS6T42ny7";
@@ -66,14 +70,12 @@ require([
 
   // Add the search widget to the top right corner of the view
   view.ui.add(searchExpand, {
-    position: "top-right",
+    position: "top-left",
   });
   //-------------------LocationTracker-------------------------
   var track = new Track({
     view: view,
   });
-
-  view.ui.add(track, "top-left");
 
   view.when(function () {
     track.stop();
@@ -99,7 +101,8 @@ require([
     }
   });
 
-  view.ui.add(basemapExpand, "top-right");
+  view.ui.add(basemapExpand, "top-left");
+
   //--------------------------co-ordinateConversion------------------------------
   const conversion = new CoordinateConversion({
     view: view,
@@ -238,27 +241,24 @@ require([
       case "polyline":
         getLength(geom);
         break;
+      case "point":
+        const Point = webMercatorUtils.webMercatorToGeographic(geom).toJSON();
+        measurements.style.display = "block";
+        measurements.innerHTML = `<h5>X : ${Point.x}, Y : ${Point.y}<h5/>`;
+
+        break;
       default:
         console.log("No value found");
     }
   }
-  //---------------------------Layer---------------------------
-  const layerExpand = new Expand({
-    view: view,
-    content: "",
-    expanded: false,
-    expandIconClass: "esri-icon-layers",
-    expandTooltip: "BaseMap",
-  });
-  view.ui.add(layerExpand, "top-left");
-  //-------------------------------------------------------------
+
   // Add the calcite-panel for the styler to an Expand to hide/show the panel
   const stylerExpand = new Expand({
     view: view,
     content: document.getElementById("propPanel"),
     expanded: false,
     expandIconClass: "esri-icon-edit",
-    expandTooltip: "Open Styler",
+    expandTooltip: "Draw Tools",
   });
 
   // Add SnappingControls to handle snapping
@@ -295,8 +295,76 @@ require([
     setDefaultPolygonSymbol();
   });
 
-  view.ui.add(stylerExpand, "top-right"); // Add the calcite panel
-  view.ui.add(snappingExpand, "top-right"); // Add the Expand with SnappingControls widget
+  view.ui.add(stylerExpand, "top-left");
+  view.ui.add(track, "top-left");
+  //---------------------------Layer-checkbox--------------------------
+
+  const layer = document.getElementById("container");
+
+  // layer.style.width = "200px";
+  const layerExpand = new Expand({
+    view: view,
+    content: layer,
+    expanded: false,
+    expandIconClass: "esri-icon-layers",
+    expandTooltip: "featureLayer",
+  });
+
+  if (layerExpand.expanded === false) {
+    layer.style.display = "block";
+  }
+
+  var valueList = document.getElementById("valueList");
+  var text = `<span> you have selected:</span>`;
+  var listArray = [];
+  var clicks = 0;
+  var checkboxes = document.querySelectorAll(".checkbox");
+  var selectAll = document.querySelector(".selectAll");
+
+  selectAll.addEventListener("change", function () {
+    clicks = checkboxes.length;
+
+    if (this.checked === true) {
+      checkboxes.forEach((box) => {
+        box.checked = true;
+        listArray = listArray.filter((e) => e != box.value);
+        listArray.push(box.value);
+        valueList.innerHTML = text + listArray.join("/");
+      });
+    } else {
+      clicks = 0;
+      checkboxes.forEach((box) => {
+        box.checked = false;
+        listArray = listArray.filter((e) => e != box.value);
+        valueList.innerHTML = text + listArray.join("/");
+      });
+    }
+  });
+
+  for (var checkbox of checkboxes) {
+    checkbox.addEventListener("change", function () {
+      if (this.checked == true) {
+        clicks += 1;
+
+        listArray.push(this.value);
+        valueList.innerHTML = text + listArray.join("/");
+
+        if (clicks === checkboxes.length) {
+          selectAll.checked = true;
+        }
+      } else {
+        clicks -= 1;
+
+        selectAll.checked = false;
+        listArray = listArray.filter((e) => e != this.value);
+        valueList.innerHTML = text + listArray.join("/");
+      }
+    });
+  }
+
+  //-------------------------------------------------------------
+  view.ui.add(layerExpand, "top-left"); // Add the calcite panel
+  view.ui.add(snappingExpand, "top-left"); // Add the Expand with SnappingControls widget
   view.ui.add(shortcutKeysExpand, "top-left");
 
   // Connecting the calcite actions with their corresponding SketchViewModel tools
@@ -308,6 +376,145 @@ require([
   const clearBtn = document.getElementById("clearBtn");
   const selectBtn = document.getElementById("selectBtn");
 
+  //----------------------------find sketch coordinates--------------------------------
+  var FeatureLayer = {
+    type: "FeatureCollection",
+    features: [],
+  };
+
+  //point style attributes----------------------
+  var pointStyle = [];
+  var pointSize = [];
+  var pointColor = [];
+  var pointOutline = [];
+  var pointOutlineColor = [];
+  //-polygon style attributes-------------------------------------------------
+  var polygonStyle = [];
+  var polygonColor = [];
+  var polygonOutlineColor = [];
+  var polygonOutlineWidth = [];
+  var polygonOutlineStyle = [];
+  //-polyline style attributes-------------------------------------------------
+  var polylineStyle = [];
+  var polylineWidth = [];
+  var polylineColor = [];
+  //--------------------------------------
+  sketchVM.on("create", function (event) {
+    if (event.state === "complete") {
+      var geom = event.graphic.geometry;
+      switchType(geom);
+    }
+
+    function switchType(geom) {
+      const coordinates = webMercatorUtils
+        .webMercatorToGeographic(geom)
+        .toJSON();
+
+      switch (geom.type) {
+        case "polygon":
+          measurements.style.display = "block";
+          const geodesicArea = geometryEngine.geodesicArea(
+            geom,
+            "square-kilometers"
+          );
+          const planarArea = geometryEngine.planarArea(
+            geom,
+            "square-kilometers"
+          );
+
+          measurements.innerHTML =
+            "<b>Geodesic area</b>:  " +
+            geodesicArea.toFixed(2) +
+            " km\xB2" +
+            " |   <b>Planar area</b>: " +
+            planarArea.toFixed(2) +
+            "  km\xB2";
+          // Feature.push(coordinate);
+
+          var data = {
+            type: "Feature",
+            properties: {
+              spatialReference: coordinates.spatialReference.wkid,
+              polygonStyle: polygonStyle.length === 0 ? "" : polygonStyle[0],
+
+              polygonColor: polygonColor.length === 0 ? "" : polygonColor[0],
+
+              polygonOutlineColor:
+                polygonOutlineColor.length === 0 ? "" : polygonOutlineColor[0],
+              polygonOutlineWidth:
+                polygonOutlineWidth.length === 0 ? "" : polygonOutlineWidth[0],
+              polygonOutlineStyle:
+                polygonOutlineStyle.length === 0 ? "" : polygonOutlineStyle[0],
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [coordinates.rings],
+            },
+          };
+          FeatureLayer.features.push(data);
+
+          break;
+        case "polyline":
+          measurements.style.display = "block";
+          const geodesicLength = geometryEngine.geodesicLength(
+            geom,
+            "kilometers"
+          );
+          const planarLength = geometryEngine.planarLength(geom, "kilometers");
+
+          measurements.innerHTML =
+            "<b>Geodesic length</b>:  " +
+            geodesicLength.toFixed(2) +
+            " km" +
+            " |   <b>Planar length</b>: " +
+            planarLength.toFixed(2) +
+            "  km";
+          var data = {
+            type: "Feature",
+            properties: {
+              spatialReference: coordinates.spatialReference.wkid,
+              polylineStyle: polylineStyle.length === 0 ? "" : polylineStyle[0],
+              polylineWidth: polylineWidth.length === 0 ? "" : polylineWidth[0],
+              polylineColor: polylineColor.length === 0 ? "" : polylineColor[0],
+            },
+            geometry: {
+              type: "Polyline",
+              coordinates: [coordinates.paths],
+            },
+          };
+          FeatureLayer.features.push(data);
+
+          break;
+        case "point":
+          measurements.style.display = "block";
+          measurements.innerHTML = `<h5>X : ${coordinates.x}, Y : ${coordinates.y}<h5/>`;
+          var data = {
+            type: "Feature",
+            properties: {
+              spatialReference: coordinates.spatialReference.wkid,
+              pointStyle: pointStyle.length === 0 ? "" : pointStyle[0],
+              pointSize: pointSize.length === 0 ? "" : pointSize[0],
+              pointColor: pointColor.length === 0 ? "" : pointColor[0],
+              pointOutline: pointOutline.length === 0 ? "" : pointOutline[0],
+              pointOutlineColor:
+                pointOutlineColor.length === 0 ? "" : pointOutlineColor[0],
+            },
+            geometry: {
+              type: "Point",
+              coordinates: [coordinates.x, coordinates.y],
+            },
+          };
+          FeatureLayer.features.push(data);
+
+          break;
+      }
+    }
+  });
+  // view.on("click", () => {
+  //   measurements.style.display = "none";
+  // });
+
+  //--------------------------------------------------------------
   pointBtn.onclick = () => {
     sketchVM.create("point");
   };
@@ -402,6 +609,8 @@ require([
 
     pointSizeInput.addEventListener("calciteInputInput", (evt) => {
       pointSymbol.size = parseInt(evt.target.value);
+      pointSize.pop();
+      pointSize.push(pointSymbol.size);
     });
     pointXOffsetInput.addEventListener("calciteInputInput", (evt) => {
       pointSymbol.xoffset = parseInt(evt.target.value);
@@ -414,9 +623,13 @@ require([
     });
     pointStyleSelect.addEventListener("calciteSelectChange", () => {
       pointSymbol.style = pointStyleSelect.selectedOption.value;
+      pointStyle.pop();
+      pointStyle.push(pointSymbol.style);
     });
     pointColorInput.addEventListener("calciteInputInput", (evt) => {
       pointSymbol.color = evt.target.value;
+      pointColor.pop();
+      pointColor.push(pointSymbol.color);
     });
     pointSymbolOutlineBtn.onclick = () => {
       openModal("point-outline-modal");
@@ -424,9 +637,14 @@ require([
     // point outline modal event listeners
     slsWidthInput.addEventListener("calciteInputInput", (evt) => {
       pointSymbol.outline.width = parseInt(evt.target.value);
+      pointOutline.pop();
+      pointOutline.push(pointSymbol.outline.width);
     });
     slsColorInput.addEventListener("calciteInputInput", (evt) => {
       pointSymbol.outline.color = evt.target.value;
+      pointOutlineColor.pop();
+      pointOutlineColor.push(pointSymbol.outline.color);
+      console.log(pointOutlineColor);
     });
   }
 
@@ -443,12 +661,18 @@ require([
 
     lineStyleSelect.addEventListener("calciteSelectChange", () => {
       lineSymbol.style = lineStyleSelect.selectedOption.value;
+      polylineStyle.pop();
+      polylineStyle.push(lineSymbol.style);
     });
     lineWidthInput.addEventListener("calciteInputInput", (evt) => {
       lineSymbol.width = parseInt(evt.target.value);
+      polylineWidth.pop();
+      polylineWidth.push(lineSymbol.width);
     });
     lineColorInput.addEventListener("calciteInputInput", (evt) => {
       lineSymbol.color = evt.target.value;
+      polylineColor.pop();
+      polylineColor.push(lineSymbol.color);
     });
   }
 
@@ -471,9 +695,13 @@ require([
 
     polygonStyleSelect.addEventListener("calciteSelectChange", () => {
       polygonSymbol.style = polygonStyleSelect.selectedOption.value;
+      polygonStyle.pop();
+      polygonStyle.push(polygonSymbol.style);
     });
     polygonColorInput.addEventListener("calciteInputInput", (evt) => {
       polygonSymbol.color = evt.target.value;
+      polygonColor.pop();
+      polygonColor.push(polygonSymbol.color);
     });
     polygonSymbolOutlineBtn.onclick = () => {
       openModal("polygon-outline-modal");
@@ -481,12 +709,18 @@ require([
     // polygon outline modal event listeners
     slsStyleSelect.addEventListener("calciteSelectChange", () => {
       polygonSymbol.outline.style = slsStyleSelect.selectedOption.value;
+      polygonOutlineStyle.pop();
+      polygonOutlineStyle.push(polygonSymbol.outline.style);
     });
     slsWidthInput.addEventListener("calciteInputInput", (evt) => {
       polygonSymbol.outline.width = parseInt(evt.target.value);
+      polygonOutlineWidth.pop();
+      polygonOutlineWidth.push(polygonSymbol.outline.width);
     });
     slsColorInput.addEventListener("calciteInputInput", (evt) => {
       polygonSymbol.outline.color = evt.target.value;
+      polygonOutlineColor.pop();
+      polygonOutlineColor.push(polygonSymbol.outline.color);
     });
   }
 
@@ -504,4 +738,15 @@ require([
   function openModal(id) {
     document.getElementById(id).active = true;
   }
+  //-----------------------------------------------------------------------------
+  var save = document.getElementById("export");
+  save.addEventListener("click", () => {
+    layerCollection.push(FeatureLayer);
+    FeatureLayer = {
+      type: "FeatureCollection",
+      features: [],
+    };
+    console.log(layerCollection);
+  });
+  //
 });
