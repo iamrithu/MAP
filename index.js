@@ -299,20 +299,15 @@ require([
   view.ui.add(track, "top-left");
   //---------------------------Layer-checkbox--------------------------
 
-  const layer = document.getElementById("container");
+  // const layer = document.getElementById("container");
 
-  // layer.style.width = "200px";
   const layerExpand = new Expand({
     view: view,
-    content: layer,
-    expanded: false,
+    content: document.getElementById("container"),
+    expanded: true,
     expandIconClass: "esri-icon-layers",
     expandTooltip: "featureLayer",
   });
-
-  if (layerExpand.expanded === false) {
-    layer.style.display = "block";
-  }
 
   var valueList = document.getElementById("valueList");
   var text = `<span> you have selected:</span>`;
