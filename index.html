@@ -1,0 +1,455 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>MAP</title>
+
+    <script
+      type="module"
+      src="https://js.arcgis.com/calcite-components/1.0.0-beta.69/calcite.esm.js"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://js.arcgis.com/calcite-components/1.0.0-beta.69/calcite.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.22/esri/themes/light/main.css"
+    />
+    <script src="https://js.arcgis.com/4.22/"></script>
+
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <div id="viewDiv">
+      <div id="measurements" class="esri-widget"></div>
+    </div>
+    <calcite-panel heading="SketchViewModel Styler" id="propPanel">
+      <calcite-block id="headingBlock">
+        <calcite-action
+          icon="cursor"
+          title="Select graphic"
+          scale="s"
+          slot="control"
+          id="selectBtn"
+        ></calcite-action>
+        <calcite-action
+          icon="pin"
+          title="Draw a point"
+          scale="s"
+          slot="control"
+          id="pointBtn"
+        ></calcite-action>
+        <calcite-action
+          icon="line"
+          title="Draw a polyline"
+          scale="s"
+          slot="control"
+          id="polylineBtn"
+        ></calcite-action>
+        <calcite-action
+          icon="polygon"
+          title="Draw a polygon"
+          scale="s"
+          slot="control"
+          id="polygonBtn"
+        ></calcite-action>
+        <calcite-action
+          icon="rectangle"
+          title="Draw a rectangle"
+          scale="s"
+          slot="control"
+          id="rectangleBtn"
+        >
+        </calcite-action>
+        <calcite-action
+          icon="circle"
+          title="Draw a circle"
+          scale="s"
+          slot="control"
+          id="circleBtn"
+        ></calcite-action>
+        <calcite-action
+          icon="trash"
+          title="Clear graphics"
+          scale="s"
+          slot="control"
+          id="clearBtn"
+        ></calcite-action>
+      </calcite-block>
+      <calcite-accordion selection-mode="single">
+        <!--- defaultCreateOptions -->
+        <calcite-accordion-item item-subtitle="defaultCreateOptions">
+          <calcite-label
+            >mode
+            <calcite-select scale="s" id="mode-select">
+              <calcite-option value="" selected disabled
+                >choose mode</calcite-option
+              >
+              <calcite-option value="click">click</calcite-option>
+              <calcite-option value="freehand">freehand</calcite-option>
+              <calcite-option value="hybrid">hybrid</calcite-option>
+            </calcite-select>
+          </calcite-label>
+        </calcite-accordion-item>
+        <!--- defaulteUpdateOptions -->
+        <calcite-accordion-item item-subtitle="defaultUpdateOptions">
+          <calcite-label
+            >enableRotation
+            <calcite-label layout="inline">
+              True
+              <calcite-switch
+                scale="s"
+                dir="rtl"
+                id="rotationSwitch"
+              ></calcite-switch>
+              False
+            </calcite-label>
+          </calcite-label>
+          <calcite-label
+            >enableScaling
+            <calcite-label layout="inline">
+              True
+              <calcite-switch
+                scale="s"
+                dir="rtl"
+                id="scaleSwitch"
+              ></calcite-switch>
+              False
+            </calcite-label>
+          </calcite-label>
+          <calcite-label
+            >preserveAspectRatio
+            <calcite-label layout="inline">
+              True
+              <calcite-switch
+                scale="s"
+                dir="rtl"
+                id="aspectRatioSwitch"
+              ></calcite-switch>
+              False
+            </calcite-label>
+          </calcite-label>
+          <calcite-label
+            >multipleSelectionEnabled
+            <calcite-label layout="inline">
+              True
+              <calcite-switch
+                scale="s"
+                dir="rtl"
+                id="multipleSelectionSwitch"
+              ></calcite-switch>
+              False
+            </calcite-label>
+          </calcite-label>
+        </calcite-accordion-item>
+        <!--- pointSymbol -->
+        <calcite-accordion-item item-subtitle="pointSymbol">
+          <div class="scrollSection">
+            <calcite-label
+              >style
+              <calcite-select scale="s" id="point-style-select">
+                <calcite-option value="circle" selected>circle</calcite-option>
+                <calcite-option value="cross">cross</calcite-option>
+                <calcite-option value="diamond">diamond</calcite-option>
+                <calcite-option value="square">square</calcite-option>
+                <calcite-option value="x">x</calcite-option>
+              </calcite-select>
+            </calcite-label>
+            <calcite-label
+              >color
+              <calcite-input
+                placeholder="Placeholder"
+                type="color"
+                scale="s"
+                id="point-color-input"
+              >
+              </calcite-input>
+            </calcite-label>
+            <calcite-label
+              >outline
+              <calcite-button id="point-outline-btn" scale="s"
+                >Set Outline</calcite-button
+              >
+            </calcite-label>
+            <calcite-label
+              >size
+              <calcite-input
+                id="point-size-input"
+                placeholder="Placeholder"
+                type="number"
+                scale="s"
+                min="0"
+              ></calcite-input>
+            </calcite-label>
+            <calcite-label
+              >xoffset
+              <calcite-input
+                id="point-xoffset-input"
+                placeholder="Placeholder"
+                type="number"
+                scale="s"
+              ></calcite-input>
+            </calcite-label>
+            <calcite-label
+              >yoffset
+              <calcite-input
+                id="point-yoffset-input"
+                placeholder="Placeholder"
+                type="number"
+                scale="s"
+              ></calcite-input>
+            </calcite-label>
+            <calcite-label
+              >angle
+              <calcite-input
+                id="point-angle-input"
+                placeholder="Placeholder"
+                type="number"
+                scale="s"
+                min="-360"
+                max="360"
+              >
+              </calcite-input>
+            </calcite-label>
+          </div>
+        </calcite-accordion-item>
+        <!--- polygonSymbol -->
+        <calcite-accordion-item item-subtitle="polygonSymbol">
+          <calcite-label
+            >style
+            <calcite-select scale="s" id="polygon-style-select">
+              <calcite-option disabled selected id="blankOption"
+                >choose a style</calcite-option
+              >
+              <calcite-option value="backward-diagonal"
+                >backward-diagonal</calcite-option
+              >
+              <calcite-option value="cross">cross</calcite-option>
+              <calcite-option value="diagonal-cross"
+                >diagonal-cross</calcite-option
+              >
+              <calcite-option value="forward-diagonal"
+                >forward-diagonal</calcite-option
+              >
+              <calcite-option value="horizontal">horizontal</calcite-option>
+              <calcite-option value="none">none</calcite-option>
+              <calcite-option value="vertical">vertical</calcite-option>
+              <calcite-option value="solid">solid</calcite-option>
+            </calcite-select>
+          </calcite-label>
+          <calcite-label
+            >outline
+            <calcite-button id="polygon-outline-btn" scale="s"
+              >Set Outline</calcite-button
+            >
+          </calcite-label>
+          <calcite-label
+            >color
+            <calcite-input
+              placeholder="Placeholder"
+              type="color"
+              scale="s"
+              id="polygon-color-input"
+              format="rgb"
+            >
+            </calcite-input>
+          </calcite-label>
+        </calcite-accordion-item>
+        <!--- polylineSymbol -->
+        <calcite-accordion-item item-subtitle="polylineSymbol">
+          <calcite-label
+            >style
+            <calcite-select scale="s" id="line-style-select">
+              <calcite-option disabled selected id="blankOption"
+                >choose a style</calcite-option
+              >
+              <calcite-option value="dash">dash</calcite-option>
+              <calcite-option value="dash-dot">dash-dot</calcite-option>
+              <calcite-option value="dot">dot</calcite-option>
+              <calcite-option value="long-dash">long-dash</calcite-option>
+              <calcite-option value="long-dash-dot"
+                >long-dash-dot</calcite-option
+              >
+              <calcite-option value="long-dash-dot-dot"
+                >long-dash-dot-dot</calcite-option
+              >
+              <calcite-option value="none">none</calcite-option>
+              <calcite-option value="short-dash">short-dash</calcite-option>
+              <calcite-option value="short-dash-dot"
+                >short-dash-dot</calcite-option
+              >
+              <calcite-option value="short-dash-dot-dot"
+                >short-dash-dot-dot</calcite-option
+              >
+              <calcite-option value="short-dot">short-dot</calcite-option>
+              <calcite-option value="solid">solid</calcite-option>
+            </calcite-select>
+          </calcite-label>
+          <calcite-label
+            >width
+            <calcite-input
+              min="0"
+              placeholder="Placeholder"
+              type="number"
+              scale="s"
+              id="line-width-input"
+            ></calcite-input>
+          </calcite-label>
+          <calcite-label
+            >color
+            <calcite-input
+              placeholder="Placeholder"
+              type="color"
+              scale="s"
+              id="line-color-input"
+              format="rgb"
+            >
+            </calcite-input>
+          </calcite-label>
+        </calcite-accordion-item>
+      </calcite-accordion>
+    </calcite-panel>
+
+    <!-- sketchViewModel shortcut keys-->
+    <calcite-panel
+      heading="SketchViewModel Shortcut Keys"
+      id="sketchVM-controls"
+    >
+      <calcite-value-list>
+        <calcite-value-list-item
+          label="F"
+          disabled
+          description="Adds a vertex to the polyline or polygon graphic. Completes the rectangle or circle polygon graphic in click mode."
+        >
+        </calcite-value-list-item>
+        <calcite-value-list-item
+          label="Enter"
+          description="Completes the polyline or polygon graphic sketch. Adds a point graphic at the pointer location."
+        >
+        </calcite-value-list-item>
+        <calcite-value-list-item
+          label="Z"
+          description="Incrementally undo actions recorded in the stack."
+        >
+        </calcite-value-list-item>
+        <calcite-value-list-item
+          label="R"
+          description="Incrementally redo actions recorded in the stack."
+        >
+        </calcite-value-list-item>
+        <calcite-value-list-item
+          label="Ctrl"
+          description="Toggle snapping dependent on the configuration in snappingOptions."
+        >
+        </calcite-value-list-item>
+        <calcite-value-list-item
+          label="Delete"
+          description="Remove the selected graphic(s) from the layer."
+        >
+        </calcite-value-list-item>
+        <calcite-value-list-item
+          label="Shift+Left-click"
+          description="Select multiple graphics."
+        ></calcite-value-list-item>
+      </calcite-value-list>
+    </calcite-panel>
+
+    <!-- modal point outline -->
+    <calcite-modal id="point-outline-modal" width="300">
+      <h3 slot="header">SimpleLineSymbol</h3>
+      <div slot="content">
+        <calcite-label
+          >width
+          <calcite-input
+            min="0"
+            placeholder="Placeholder"
+            type="number"
+            scale="s"
+            id="point-sls-width-input"
+          >
+          </calcite-input>
+        </calcite-label>
+        <calcite-label
+          >color
+          <calcite-input
+            placeholder="Placeholder"
+            type="color"
+            scale="s"
+            id="point-sls-color-input"
+            format="rgb"
+          >
+          </calcite-input>
+        </calcite-label>
+      </div>
+    </calcite-modal>
+
+    <!-- modal polygon outline -->
+    <calcite-modal id="polygon-outline-modal" width="300">
+      <h3 slot="header">SimpleLineSymbol</h3>
+      <div slot="content">
+        <calcite-label
+          >style
+          <calcite-select scale="s" id="polygon-sls-style-select">
+            <calcite-option disabled selected id="blankOption"
+              >choose a style</calcite-option
+            >
+            <calcite-option value="dash">dash</calcite-option>
+            <calcite-option value="dash-dot">dash-dot</calcite-option>
+            <calcite-option value="dot">dot</calcite-option>
+            <calcite-option value="long-dash">long-dash</calcite-option>
+            <calcite-option value="long-dash-dot">long-dash-dot</calcite-option>
+            <calcite-option value="long-dash-dot-dot"
+              >long-dash-dot-dot</calcite-option
+            >
+            <calcite-option value="none">none</calcite-option>
+            <calcite-option value="short-dash">short-dash</calcite-option>
+            <calcite-option value="short-dash-dot"
+              >short-dash-dot</calcite-option
+            >
+            <calcite-option value="short-dash-dot-dot"
+              >short-dash-dot-dot</calcite-option
+            >
+            <calcite-option value="short-dot">short-dot</calcite-option>
+            <calcite-option value="solid">solid</calcite-option>
+          </calcite-select>
+        </calcite-label>
+        <calcite-label
+          >width
+          <calcite-input
+            min="0"
+            placeholder="Placeholder"
+            type="number"
+            scale="s"
+            id="polygon-sls-width-input"
+          >
+          </calcite-input>
+        </calcite-label>
+        <calcite-label
+          >color
+          <calcite-input
+            placeholder="Placeholder"
+            type="color"
+            scale="s"
+            id="polygon-sls-color-input"
+            format="rgb"
+          >
+          </calcite-input>
+        </calcite-label>
+      </div>
+    </calcite-modal>
+  </body>
+  <script src="./index.js"></script>
+</html>
