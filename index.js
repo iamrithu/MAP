@@ -510,9 +510,15 @@ require([
       }
     }
   });
-  // view.on("click", () => {
-  //   measurements.style.display = "none";
-  // });
+  view.on("click", () => {
+    layerExpand.expanded = false;
+    snappingExpand.expanded = false;
+    shortcutKeysExpand.expanded = false;
+    stylerExpand.expanded = false;
+    basemapExpand.expanded = false;
+    searchExpand.expanded = false;
+    conversionExpand.expanded = false;
+  });
 
   //--------------------------------------------------------------
   pointBtn.onclick = () => {
