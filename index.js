@@ -17,6 +17,10 @@ require([
   "esri/Graphic",
   "esri/geometry/geometryEngine",
   "esri/geometry/support/webMercatorUtils",
+  "esri/widgets/Print",
+  "esri/layers/FeatureLayer",
+  "esri/layers/GroupLayer",
+  "esri/widgets/LayerList",
 ], (
   esriConfig,
   SketchViewModel,
@@ -33,7 +37,11 @@ require([
   ScaleBar,
   Graphic,
   geometryEngine,
-  webMercatorUtils
+  webMercatorUtils,
+  Print,
+  FeatureLayer,
+  GroupLayer,
+  LayerList
 ) => {
   esriConfig.apiKey =
     "AAPK98c50a3510cc4cb9a07dc3116113843cqZssDSqHkgmBfOp_v5GIAETd4ggp7oleJJQPSyr9NmmTf-2GSs7swp9zS6T42ny7";
@@ -41,7 +49,7 @@ require([
   const graphicsLayer = new GraphicsLayer({ title: "graphicsLayer" });
 
   const map = new Map({
-    basemap: "arcgis-imagery",
+    basemap: "arcgis-streets",
     layers: [graphicsLayer],
   });
 
@@ -114,6 +122,9 @@ require([
     expanded: false,
     expandIconClass: "esri-icon-measure-area",
     expandTooltip: "CoordinateConversion",
+    // closeOnEsc: function () {
+    //   return conversion.activeMenu === "none";
+    // },
   });
 
   view.ui.add(conversionExpand, "bottom-left");
@@ -205,6 +216,10 @@ require([
   });
 
   function getArea(polygon) {
+    polylineGeodesicLength.pop();
+    polylineGeodesicLength.push(geodesicLength.toFixed(2) + "km");
+    polylinePlanerLength.pop();
+    polylinePlanerLength.push(planarLength.toFixed(2) + "km");
     const geodesicArea = geometryEngine.geodesicArea(
       polygon,
       "square-kilometers"
@@ -221,6 +236,10 @@ require([
   }
 
   function getLength(line) {
+    polylineGeodesicLength.pop();
+    polylineGeodesicLength.push(geodesicLength.toFixed(2) + "km");
+    polylinePlanerLength.pop();
+    polylinePlanerLength.push(planarLength.toFixed(2) + "km");
     const geodesicLength = geometryEngine.geodesicLength(line, "kilometers");
     const planarLength = geometryEngine.planarLength(line, "kilometers");
 
@@ -300,63 +319,117 @@ require([
   //---------------------------Layer-checkbox--------------------------
 
   // const layer = document.getElementById("container");
-
+  var layerList = new LayerList({
+    view: view,
+  });
   const layerExpand = new Expand({
     view: view,
-    content: document.getElementById("container"),
-    expanded: true,
+    content: layerList,
+    expanded: false,
     expandIconClass: "esri-icon-layers",
     expandTooltip: "featureLayer",
   });
 
-  var valueList = document.getElementById("valueList");
-  var text = `<span> you have selected:</span>`;
-  var listArray = [];
-  var clicks = 0;
-  var checkboxes = document.querySelectorAll(".checkbox");
-  var selectAll = document.querySelector(".selectAll");
-
-  selectAll.addEventListener("change", function () {
-    clicks = checkboxes.length;
-
-    if (this.checked === true) {
-      checkboxes.forEach((box) => {
-        box.checked = true;
-        listArray = listArray.filter((e) => e != box.value);
-        listArray.push(box.value);
-        valueList.innerHTML = text + listArray.join("/");
-      });
-    } else {
-      clicks = 0;
-      checkboxes.forEach((box) => {
-        box.checked = false;
-        listArray = listArray.filter((e) => e != box.value);
-        valueList.innerHTML = text + listArray.join("/");
-      });
-    }
+  // Trails feature layer (lines)
+  var SoilLandscape = new FeatureLayer({
+    url: "https://services3.arcgis.com/KD7TtlnkhprHYJ7K/arcgis/rest/services/soillandscape/FeatureServer/0",
   });
 
-  for (var checkbox of checkboxes) {
-    checkbox.addEventListener("change", function () {
-      if (this.checked == true) {
-        clicks += 1;
+  // Parks and open spaces (polygons)
+  var EOS_SensitiveArea = new FeatureLayer({
+    url: "https://services3.arcgis.com/KD7TtlnkhprHYJ7K/arcgis/rest/services/eos_sensitivearea/FeatureServer/0",
+  });
+  var Crown_Reservations = new FeatureLayer({
+    url: "https://services3.arcgis.com/KD7TtlnkhprHYJ7K/arcgis/rest/services/crown_reservations/FeatureServer/0",
+  });
+  var Parks_Protected_Areas = new FeatureLayer({
+    url: "https://services3.arcgis.com/KD7TtlnkhprHYJ7K/arcgis/rest/services/parks_protected_areas/FeatureServer/0",
+  });
+  var BC_Bedrock = new FeatureLayer({
+    url: "https://services3.arcgis.com/KD7TtlnkhprHYJ7K/arcgis/rest/services/bc_bedrock1/FeatureServer/0",
+  });
+  var alberto = new GroupLayer({
+    title: "Alberto",
+    layers: [
+      SoilLandscape,
+      EOS_SensitiveArea,
+      Crown_Reservations,
+      Parks_Protected_Areas,
+    ],
+    visible: false,
+  });
+  var bc = new GroupLayer({
+    title: "BC",
+    layers: [BC_Bedrock],
+    visible: false,
+  });
 
-        listArray.push(this.value);
-        valueList.innerHTML = text + listArray.join("/");
+  map.add(alberto);
+  map.add(bc);
 
-        if (clicks === checkboxes.length) {
-          selectAll.checked = true;
-        }
-      } else {
-        clicks -= 1;
+  // var valueList = document.getElementById("valueList");
+  // var text = `<span> you have selected:</span>`;
+  // var listArray = [];
 
-        selectAll.checked = false;
-        listArray = listArray.filter((e) => e != this.value);
-        valueList.innerHTML = text + listArray.join("/");
-      }
-    });
-  }
+  // var clicks = 0;
+  // var checkboxes = document.querySelectorAll(".checkbox");
+  // var selectAll = document.querySelector(".selectAll");
 
+  // selectAll.addEventListener("change", function () {
+  //   clicks = checkboxes.length;
+
+  //   if (this.checked === true) {
+  //     checkboxes.forEach((box) => {
+  //       box.checked = true;
+  //       listArray = listArray.filter((e) => e != box.value);
+  //       listArray.push(box.value);
+
+  //       valueList.innerHTML = text + listArray.join("/");
+  //     });
+  //   } else {
+  //     clicks = 0;
+  //     checkboxes.forEach((box) => {
+  //       box.checked = false;
+  //       listArray = listArray.filter((e) => e != box.value);
+
+  //       valueList.innerHTML = text + listArray.join("/");
+  //     });
+  //   }
+  // });
+
+  // for (var checkbox of checkboxes) {
+  //   checkbox.addEventListener("change", function () {
+  //     if (this.checked == true) {
+  //       clicks += 1;
+
+  //       listArray.push(this.value);
+
+  //       valueList.innerHTML = text + listArray.join("/");
+
+  //       relode();
+  //       if (clicks === checkboxes.length) {
+  //         selectAll.checked = true;
+  //       }
+  //     } else {
+  //       clicks -= 1;
+
+  //       selectAll.checked = false;
+  //       listArray = listArray.filter((e) => e != this.value);
+  //       relode();
+
+  //       valueList.innerHTML = text + listArray.join("/");
+  //     }
+  //   });
+  // }
+
+  // relode();
+  // function relode() {
+  //   return (parksLayer = new FeatureLayer({
+  //     url: listArray[0],
+  //   }));
+  // }
+
+  // map.add(parksLayer, 0);
   //-------------------------------------------------------------
   view.ui.add(layerExpand, "top-left"); // Add the calcite panel
   view.ui.add(snappingExpand, "top-left"); // Add the Expand with SnappingControls widget
@@ -389,10 +462,15 @@ require([
   var polygonOutlineColor = [];
   var polygonOutlineWidth = [];
   var polygonOutlineStyle = [];
+  var polygonGeodesicArea = [];
+  var polygonPlanerArea = [];
   //-polyline style attributes-------------------------------------------------
   var polylineStyle = [];
   var polylineWidth = [];
   var polylineColor = [];
+  var polylineGeodesicLength = [];
+  var polylinePlanerLength = [];
+
   //--------------------------------------
   sketchVM.on("create", function (event) {
     if (event.state === "complete") {
@@ -416,6 +494,13 @@ require([
             geom,
             "square-kilometers"
           );
+          polygonGeodesicArea.pop();
+          polygonGeodesicArea.push(geodesicArea.toFixed(2) + " km\xB2");
+          polygonPlanerArea.pop();
+          polygonPlanerArea.push(planarArea.toFixed(2) + " km\xB2");
+
+          console.log(polygonGeodesicArea[0]);
+          console.log(polygonPlanerArea[0]);
 
           measurements.innerHTML =
             "<b>Geodesic area</b>:  " +
@@ -430,6 +515,8 @@ require([
             type: "Feature",
             properties: {
               spatialReference: coordinates.spatialReference.wkid,
+              geodesicArea: polygonGeodesicArea[0],
+              plannerArea: polygonPlanerArea[0],
               polygonStyle: polygonStyle.length === 0 ? "" : polygonStyle[0],
 
               polygonColor: polygonColor.length === 0 ? "" : polygonColor[0],
@@ -443,7 +530,11 @@ require([
             },
             geometry: {
               type: "Polygon",
-              coordinates: [coordinates.rings],
+              coordinates: coordinates.rings.map((info) => {
+                return info.map((e) => {
+                  return e;
+                });
+              }),
             },
           };
           FeatureLayer.features.push(data);
@@ -457,6 +548,11 @@ require([
           );
           const planarLength = geometryEngine.planarLength(geom, "kilometers");
 
+          polylineGeodesicLength.pop();
+          polylineGeodesicLength.push(geodesicLength.toFixed(2) + "km");
+          polylinePlanerLength.pop();
+          polylinePlanerLength.push(planarLength.toFixed(2) + "km");
+
           measurements.innerHTML =
             "<b>Geodesic length</b>:  " +
             geodesicLength.toFixed(2) +
@@ -468,13 +564,19 @@ require([
             type: "Feature",
             properties: {
               spatialReference: coordinates.spatialReference.wkid,
+              geodesicLength: polylineGeodesicLength[0],
+              planerLength: polylinePlanerLength[0],
               polylineStyle: polylineStyle.length === 0 ? "" : polylineStyle[0],
               polylineWidth: polylineWidth.length === 0 ? "" : polylineWidth[0],
               polylineColor: polylineColor.length === 0 ? "" : polylineColor[0],
             },
             geometry: {
-              type: "Polyline",
-              coordinates: [coordinates.paths],
+              type: "LineString",
+              coordinates: coordinates.paths[0].map((info) => {
+                return info.map((e) => {
+                  return e;
+                });
+              }),
             },
           };
           FeatureLayer.features.push(data);
@@ -513,6 +615,7 @@ require([
     basemapExpand.expanded = false;
     searchExpand.expanded = false;
     conversionExpand.expanded = false;
+    exportExpand.expanded = false;
   });
 
   //--------------------------------------------------------------
@@ -739,7 +842,7 @@ require([
   function openModal(id) {
     document.getElementById(id).active = true;
   }
-  //-----------------------------------------------------------------------------
+  //--------------------------save---------------------------------------------------
   var save = document.getElementById("export");
   save.addEventListener("click", () => {
     layerCollection.push(FeatureLayer);
@@ -749,5 +852,46 @@ require([
     };
     console.log(layerCollection);
   });
-  //
+  //----------------------------Export as a JSON , PDF---------------
+  const exportExpand = new Expand({
+    view: view,
+    content: document.getElementById("export-2"),
+    expanded: false,
+    expandIconClass: "esri-icon-save",
+    expandTooltip: "Export",
+  });
+  view.ui.add(exportExpand, "top-left");
+
+  var json = document.getElementById("json");
+
+  json.addEventListener("click", () => {
+    let dataStr = JSON.stringify(FeatureLayer);
+    let dataUri =
+      "data:application/geo+json;charset=utf-8," + encodeURIComponent(dataStr);
+    let exportFileDefaultName = `rithi.geojson`;
+    let linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
+    linkElement.click();
+  });
+  //-------------------------------Print---------------------------
+  var file = document.getElementById("file");
+  var print_map = document.getElementById("print");
+  var print_open = true;
+  const print = new Print({
+    view: view,
+    container: "print",
+    printServiceUrl:
+      "https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task",
+  });
+  file.addEventListener("click", () => {
+    if (print_open === true) {
+      print_map.style.display = "block";
+      print_open = false;
+    } else {
+      print_map.style.display = "none";
+      print_open = true;
+    }
+  });
+  //------------------------------------------------------
 });

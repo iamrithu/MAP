@@ -38,8 +38,7 @@ body,
 /* check box */
 .container {
   position: absolute;
-  top: -29.1px;
-  left: 0px;
+
   width: 200px;
   background-color: #ebeef7;
   padding: 10px;
@@ -95,12 +94,18 @@ input[type="checkbox"] {
 }
 #export {
   position: absolute;
-  border: 1px solid rgba(0, 0, 0, 0.103);
-  width: 30px;
-  height: 30px;
 
-  top: 319px;
+  width: 29px;
+  height: 29px;
+  border: 1px solid rgb(0, 0, 0);
+  font-size: 16px;
+  top: 345px;
   left: 15px;
+}
+#export:hover {
+  background-color: rgb(243, 243, 247);
+  color: #000000;
+  border: 1px solid #ffffff;
 }
 .fas {
   font-weight: lighter;
@@ -108,27 +113,76 @@ input[type="checkbox"] {
 .esri-widget--button {
   border-radius: 5px;
   color: rgba(39, 40, 41, 0.623);
-  font-size: 20px;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 0px;
+  font-size: 2px;
   font-weight: 100;
   background-color: rgb(255, 253, 253);
+  border: 1px solid rgb(10, 10, 10);
 }
-.esri-expand__panel,
+
 .esri-expand {
-  font-size: 16px;
-  width: 32px;
-  height: 32px;
+  min-width: 25px;
+
+  min-height: 25px;
   border-radius: 5px;
 }
 .esri-collapse__icon,
 .esri-icon {
-  font-size: 20px;
-  font-weight: lighter;
+  font-size: 18px;
+  font-weight: bolder;
 }
-.esri-icon:hover,
+/* .esri-icon:hover,
 .esri-collapse__icon:hover,
 .fas:hover {
-  color: rgb(3, 231, 247);
+  color: blue;
+} */
+.esri-widget--button:hover {
+  background-color: rgb(255, 255, 255);
+  color: #070606;
+  border: 1px solid #ffffff;
 }
 .esri-scale-bar__line {
   background-color: #ffffff;
+}
+
+#export-2 {
+  background-color: #f1eaea;
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  height: auto;
+}
+button {
+  margin: 3px 0px;
+  border-radius: 4px;
+  color: #050000;
+  padding: 4px;
+  border: 1px solid white;
+  outline: none;
+  font-size: 13px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+button:hover {
+  background-color: rgba(233, 130, 219, 0.705);
+  color: #ffffff;
+}
+.header {
+  border-radius: 40px;
+  background-color: #000000;
+}
+.esri-print {
+  position: fixed;
+
+  border-radius: 4px;
+}
+#print {
+  position: absolute;
+  top: -150px;
+  left: 86px;
+  display: none;
 }
